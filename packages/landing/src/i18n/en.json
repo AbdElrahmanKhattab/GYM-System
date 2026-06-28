@@ -1,0 +1,179 @@
+{
+  "dir": "ltr",
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "gallery": "Gallery",
+    "memberships": "Memberships",
+    "register": "Register",
+    "joinNow": "Join Now"
+  },
+  "hero": {
+    "eyebrow": "Start Your Transformation Today",
+    "title1": "Forge Your Body.",
+    "title2": "Forge Your Mind.",
+    "title3": "Become A Hero.",
+    "sub": "More than a gym. A sanctuary for those who refuse ordinary. Train with elite coaches, recover in private suites, and become the strongest version of yourself.",
+    "joinNow": "Join Now",
+    "watchVideo": "Watch Video",
+    "badgeText": "START YOUR TRANSFORMATION • TODAY • ",
+    "stats": {
+      "members": "Active Members",
+      "trainers": "Expert Trainers",
+      "equipment": "Premium Equipment"
+    }
+  },
+  "marquee": {
+    "strength": "Strength",
+    "discipline": "Discipline",
+    "power": "Power",
+    "endurance": "Endurance",
+    "excellence": "Excellence",
+    "legacy": "Legacy"
+  },
+  "about": {
+    "deco": "02",
+    "number": "02 — About Hero Gym",
+    "title1": "Built for those",
+    "title2": "who settle.",
+    "refuse": "refuse",
+    "signatureName": "Daniel Cross",
+    "signatureRole": "Founder & Head Coach"
+  },
+  "features": {
+    "number": "03 — Why Hero",
+    "head": "An experience engineered for results.",
+    "sub": "Four pillars that define the HERO standard. Every detail is calibrated for performance, recovery, and sustained transformation.",
+    "card1": {
+      "title": "Certified Trainers",
+      "desc": "Every coach holds a minimum NASM-CPT certification with 5+ years of elite-level experience. Hand-picked, continuously evaluated."
+    },
+    "card2": {
+      "title": "Premium Equipment",
+      "desc": "Curated selection of Technogym, Eleiko, and Hammer Strength. Calibrated weekly. Replaced before wear ever shows."
+    },
+    "card3": {
+      "title": "Personalized Programs",
+      "desc": "No template programs. Your training is built around your body, your goals, your schedule — and adjusted every 4 weeks."
+    },
+    "card4": {
+      "title": "Modern Facilities",
+      "desc": "Recovery suites, infrared sauna, cryotherapy, and private training studios. 24/7 access for members."
+    }
+  },
+  "gallery": {
+    "number": "04 — Real Transformations",
+    "title1": "Before & after.",
+    "title2": "No filters.",
+    "sub": "Real members. Real timelines. Real results. Drag the divider on any card to witness each transformation unfold in real time.",
+    "before": "Before",
+    "after": "After",
+    "cards": {
+      "1": {
+        "name": "Marcus Thompson",
+        "time": "16 Weeks",
+        "program": "Strength Program",
+        "result": "−24 kg"
+      },
+      "2": {
+        "name": "Elena Rodriguez",
+        "time": "24 Weeks",
+        "program": "Competition Prep",
+        "result": "Pro Card"
+      },
+      "3": {
+        "name": "David Kim",
+        "time": "12 Weeks",
+        "program": "Hypertrophy",
+        "result": "+8 kg"
+      },
+      "4": {
+        "name": "Sara Mendez",
+        "time": "20 Weeks",
+        "program": "Postnatal",
+        "result": "−15 kg"
+      },
+      "5": {
+        "name": "James Lockhart",
+        "time": "32 Weeks",
+        "program": "Powerlifting",
+        "result": "+180kg DL"
+      }
+    }
+  },
+  "membership": {
+    "number": "05 — Memberships",
+    "title": "Choose your",
+    "italic": "commitment.",
+    "sub": "Flexible structures. No hidden fees. Cancel anytime. Every membership includes an initial consultation and a customized 12-week blueprint.",
+    "loading": "Loading plans...",
+    "noPlans": "No active subscription plans available at this time.",
+    "package": "Package",
+    "descPlaceholder": "Access to premium gym equipment, customizable training sessions, and elite wellness recovery suites.",
+    "period": "/ {value} {type}",
+    "feature1": "Complete club access — 24/7",
+    "feature2": "Full locker & towel service",
+    "feature3": "Complementary orientation PT assessment",
+    "feature4Allowed": "Plan freeze allowed",
+    "feature4NotAllowed": "Plan freeze not allowed",
+    "selectPlan": "Select Plan",
+    "durationType": {
+      "months": "months",
+      "days": "days",
+      "sessions": "sessions",
+      "month": "month",
+      "day": "day",
+      "session": "session"
+    }
+  },
+  "contact": {
+    "number": "06 — Registration",
+    "title": "Your transformation",
+    "italic": "starts here.",
+    "sub": "Book your visit and pick up your luxury club keycard. Experience premium fitness designed specifically for your goals.",
+    "formTitle": "Join The Club",
+    "formSub": "Fill out the credentials below. Our guest concierge will reach out within 24 hours.",
+    "successMsg": "Registration submitted successfully. Awaiting approval.",
+    "labelName": "Full Name",
+    "labelPhone": "Phone Number",
+    "labelAge": "Age",
+    "labelGender": "Gender",
+    "genderMale": "Male",
+    "genderFemale": "Female",
+    "genderOther": "Other",
+    "labelPlan": "Preferred Plan",
+    "choosePlan": "Choose a membership...",
+    "labelHeight": "Height (cm)",
+    "labelWeight": "Weight (kg)",
+    "labelGoal": "Fitness Goal",
+    "labelNotes": "Additional Notes",
+    "placeholderName": "John Doe",
+    "placeholderPhone": "+1 555-0199",
+    "placeholderAge": "25",
+    "placeholderHeight": "e.g. 175",
+    "placeholderWeight": "e.g. 70",
+    "placeholderGoal": "Muscle building, conditioning, general health...",
+    "placeholderNotes": "Injuries, background experience, preferred scheduling...",
+    "submitBtn": "Submit Application",
+    "submitting": "Submitting Inquiry...",
+    "info": {
+      "callUs": "Call Us",
+      "visitUs": "Visit Us",
+      "emailUs": "Email Us",
+      "workingHours": "Working Hours",
+      "hoursVal": "Mon–Sun · 24 hours / Members"
+    }
+  },
+  "cta": {
+    "eyebrow": "Limited Offer — Join This Month",
+    "title": "Stop waiting. Start forging.",
+    "sub": "Your first session is complimentary. No contracts. No pressure. Just you, our coaches, and the first step toward the body you've earned.",
+    "btn": "Claim Free Session"
+  },
+  "footer": {
+    "brandDesc": "Architecting transformations since 2014. A sanctuary for those who refuse ordinary — built for the relentless.",
+    "explore": "Explore",
+    "contact": "Contact Details",
+    "rights": "© {year} HERO GYM. All rights reserved. Crafted for the relentless."
+  }
+}

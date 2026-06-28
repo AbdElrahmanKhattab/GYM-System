@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+import { LanguageProvider } from './contexts/LanguageContext.jsx'
 
 // Intercept fetch calls to dynamically prefix them with API URL from environment variables
 const originalFetch = window.fetch;
@@ -16,6 +17,8 @@ window.fetch = function (url, options) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
   </StrictMode>,
 )

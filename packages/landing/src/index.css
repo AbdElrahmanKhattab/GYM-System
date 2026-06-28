@@ -509,7 +509,7 @@ section {
 
 .hero-title {
   font-size: clamp(48px, 8.5vw, 112px);
-  line-height: 0.95;
+  line-height: 1.4;
   margin-bottom: 36px;
 }
 
@@ -1893,3 +1893,146 @@ footer {
     transform: scale(1);
   }
 }
+
+/* ========== Language Switcher & RTL Overrides ========== */
+
+/* Language switcher button */
+.lang-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: all 0.3s var(--ease);
+}
+
+.lang-toggle-btn:hover {
+  border-color: var(--gold);
+  background: rgba(212, 175, 55, 0.05);
+}
+
+.lang-toggle-btn svg {
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+/* RTL Layout & Font Settings */
+[dir="rtl"] body,
+[dir="rtl"] select,
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] button {
+  font-family: 'Cairo', 'Inter', 'Plus Jakarta Sans', sans-serif;
+}
+
+[dir="rtl"] .display {
+  font-family: 'Cairo', 'Syne', sans-serif;
+  font-weight: 800;
+}
+
+/* RTL spacing and direction adjustments */
+[dir="rtl"] .nav-inner {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nav-links {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nav-cta {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .lang-toggle-btn {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .btn {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .btn .arrow {
+  transform: rotate(180deg);
+}
+
+[dir="rtl"] .btn:hover .arrow {
+  transform: rotate(180deg) translateX(3px); /* moves left in rotated space */
+}
+
+[dir="rtl"] .hero-badge {
+  right: auto;
+  left: 48px;
+}
+
+[dir="rtl"] .hero-badge svg {
+  animation: spin-counter 20s linear infinite;
+}
+
+@keyframes spin-counter {
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+/* RTL scroll marquee direction reversal */
+[dir="rtl"] .marquee-track {
+  animation: marquee-rtl 25s linear infinite;
+}
+
+@keyframes marquee-rtl {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(50%);
+  }
+}
+
+/* Form alignments */
+[dir="rtl"] .contact-form,
+[dir="rtl"] .form-group,
+[dir="rtl"] .contact-info,
+[dir="rtl"] .info-card {
+  text-align: right;
+}
+
+[dir="rtl"] .info-card {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .info-card .icon {
+  margin-right: 0;
+  margin-left: 1.5rem;
+}
+
+[dir="rtl"] .about-visual {
+  direction: ltr; /* keep absolute images positioned identically */
+}
+
+[dir="rtl"] .footer-grid {
+  text-align: right;
+}
+
+[dir="rtl"] .footer-col {
+  text-align: right;
+}
+
+[dir="rtl"] .footer-brand {
+  text-align: right;
+}
+
+[dir="rtl"] .footer-bottom {
+  text-align: right;
+}
+
+[dir="rtl"] .logo {
+  flex-direction: row-reverse;
+}
+

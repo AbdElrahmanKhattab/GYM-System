@@ -1,6 +1,8 @@
 import { useRef, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function BeforeAfterSlider({ card }) {
+  const { t } = useLanguage();
   const sliderRef = useRef(null);
   const isDraggingRef = useRef(false);
 
@@ -121,19 +123,19 @@ export default function BeforeAfterSlider({ card }) {
         </div>
       </div>
       <div className="t-tag">
-        <span className="badge badge-before">Before</span>
-        <span className="badge badge-after">After</span>
+        <span className="badge badge-before">{t('gallery.before')}</span>
+        <span className="badge badge-after">{t('gallery.after')}</span>
       </div>
       <div className="t-info">
         <div>
-          <div className="name">{card.name}</div>
+          <div className="name">{t(`gallery.cards.${card.id}.name`)}</div>
           <div className="meta">
-            <span>{card.time}</span>
+            <span>{t(`gallery.cards.${card.id}.time`)}</span>
             <span className="sep" />
-            <span>{card.program}</span>
+            <span>{t(`gallery.cards.${card.id}.program`)}</span>
           </div>
         </div>
-        <div className="result">{card.result}</div>
+        <div className="result">{t(`gallery.cards.${card.id}.result`)}</div>
       </div>
     </div>
   );

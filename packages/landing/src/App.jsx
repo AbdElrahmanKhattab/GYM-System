@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './index.css';
 import BeforeAfterSlider from './components/BeforeAfterSlider';
+import { useLanguage } from './contexts/LanguageContext';
 
 const TRANSFORMATION_CARDS = [
   {
@@ -56,6 +57,7 @@ const TRANSFORMATION_CARDS = [
 ];
 
 export default function App() {
+  const { t, locale, toggleLanguage } = useLanguage();
   const [plans, setPlans] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [settings, setSettings] = useState(null);
@@ -334,21 +336,34 @@ export default function App() {
             <span>{settings?.gymName || 'HERO GYM'}</span>
           </a>
           <ul className="nav-links">
-            <li><a href="#home" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>Home</a></li>
-            <li><a href="#about" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>About</a></li>
-            <li><a href="#gallery" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>Gallery</a></li>
-            <li><a href="#membership" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>Memberships</a></li>
-            <li><a href="#contact" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>Register</a></li>
+            <li><a href="#home" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{t('nav.home')}</a></li>
+            <li><a href="#about" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{t('nav.about')}</a></li>
+            <li><a href="#gallery" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{t('nav.gallery')}</a></li>
+            <li><a href="#membership" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{t('nav.memberships')}</a></li>
+            <li><a href="#contact" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{t('nav.register')}</a></li>
           </ul>
           <div className="nav-cta">
+            <button 
+              className="lang-toggle-btn"
+              onClick={toggleLanguage}
+              onMouseEnter={() => setCursorHover(true)}
+              onMouseLeave={() => setCursorHover(false)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width: 16, height: 16, verticalAlign: 'middle'}}>
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              <span className="lang-text" style={{ marginLeft: locale === 'ar' ? 0 : '6px', marginRight: locale === 'ar' ? '6px' : 0 }}>{locale === 'en' ? 'العربية' : 'English'}</span>
+            </button>
             <a 
               href="#membership" 
-              className="btn btn-primary" 
+              className="btn btn-primary btn-nav-join" 
               onMouseEnter={() => setCursorHover(true)} 
               onMouseLeave={() => setCursorHover(false)}
             >
-              Join Now
-              <span className="arrow">→</span>
+              {t('nav.joinNow')}
+              <span className="arrow">{locale === 'ar' ? '←' : '→'}</span>
             </a>
             <button 
               className="menu-toggle" 
@@ -365,11 +380,18 @@ export default function App() {
       {/* Mobile Menu */}
       <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
         <button className="mobile-close" onClick={() => setMobileMenuOpen(false)}>✕</button>
-        <a href="#home" onClick={() => setMobileMenuOpen(false)}>Home</a>
-        <a href="#about" onClick={() => setMobileMenuOpen(false)}>About</a>
-        <a href="#gallery" onClick={() => setMobileMenuOpen(false)}>Gallery</a>
-        <a href="#membership" onClick={() => setMobileMenuOpen(false)}>Memberships</a>
-        <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Register</a>
+        <button 
+          className="mobile-lang-toggle btn" 
+          onClick={() => { toggleLanguage(); setMobileMenuOpen(false); }}
+          style={{ alignSelf: 'center', marginBottom: '1.5rem', border: '1px solid var(--border-strong)', padding: '8px 16px', fontSize: '12px' }}
+        >
+          {locale === 'en' ? 'العربية' : 'English'}
+        </button>
+        <a href="#home" onClick={() => setMobileMenuOpen(false)}>{t('nav.home')}</a>
+        <a href="#about" onClick={() => setMobileMenuOpen(false)}>{t('nav.about')}</a>
+        <a href="#gallery" onClick={() => setMobileMenuOpen(false)}>{t('nav.gallery')}</a>
+        <a href="#membership" onClick={() => setMobileMenuOpen(false)}>{t('nav.memberships')}</a>
+        <a href="#contact" onClick={() => setMobileMenuOpen(false)}>{t('nav.register')}</a>
       </div>
 
       {/* Hero Section */}
@@ -379,15 +401,15 @@ export default function App() {
         <div className="hero-content">
           <div className="hero-eyebrow">
             <span className="line" />
-            <span className="eyebrow-gold">Start Your Transformation Today</span>
+            <span className="eyebrow-gold">{t('hero.eyebrow')}</span>
           </div>
           <h1 className="hero-title display">
-            Forge Your Body.<br />
-            Forge Your Mind.<br />
-            <span className="gold-word">Become A Hero.</span>
+            {t('hero.title1')}<br />
+            {t('hero.title2')}<br />
+            <span className="gold-word">{t('hero.title3')}</span>
           </h1>
           <p className="hero-sub">
-            More than a gym. A sanctuary for those who refuse ordinary. Train with elite coaches, recover in private suites, and become the strongest version of yourself.
+            {t('hero.sub')}
           </p>
           <div className="hero-actions">
             <a 
@@ -396,8 +418,8 @@ export default function App() {
               onMouseEnter={() => setCursorHover(true)} 
               onMouseLeave={() => setCursorHover(false)}
             >
-              Join Now
-              <span className="arrow">→</span>
+              {t('hero.joinNow')}
+              <span className="arrow">{locale === 'ar' ? '←' : '→'}</span>
             </a>
             <a 
               href="#gallery" 
@@ -405,7 +427,7 @@ export default function App() {
               onMouseEnter={() => setCursorHover(true)} 
               onMouseLeave={() => setCursorHover(false)}
             >
-              Watch Video
+              {t('hero.watchVideo')}
             </a>
           </div>
         </div>
@@ -416,21 +438,21 @@ export default function App() {
               <span>{activeMembersCount.toLocaleString()}</span>
               <span className="suffix">+</span>
             </div>
-            <div className="label">Active Members</div>
+            <div className="label">{t('hero.stats.members')}</div>
           </div>
           <div className="stat-item">
             <div className="num">
               <span>{trainersCount}</span>
               <span className="suffix">+</span>
             </div>
-            <div className="label">Expert Trainers</div>
+            <div className="label">{t('hero.stats.trainers')}</div>
           </div>
           <div className="stat-item">
             <div className="num">
               <span>{equipmentCount}</span>
               <span className="suffix">+</span>
             </div>
-            <div className="label">Premium Equipment</div>
+            <div className="label">{t('hero.stats.equipment')}</div>
           </div>
         </div>
 
@@ -439,8 +461,8 @@ export default function App() {
             <defs>
               <path id="circlePath" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" />
             </defs>
-            <text fontFamily="Syne" fontSize="10.5" fontWeight="600" letterSpacing="1.8" fill="#f6f6f6">
-              <textPath href="#circlePath">START YOUR TRANSFORMATION • TODAY • </textPath>
+            <text fontFamily="Cairo" fontSize="9.5" fontWeight="600" letterSpacing="1.2" fill="#f6f6f6">
+              <textPath href="#circlePath">{t('hero.badgeText')}</textPath>
             </text>
           </svg>
           <div 
@@ -449,7 +471,7 @@ export default function App() {
             onMouseLeave={() => setCursorHover(false)}
             onClick={() => document.getElementById('membership').scrollIntoView({ behavior: 'smooth' })}
           >
-            →
+            {locale === 'ar' ? '←' : '→'}
           </div>
         </div>
       </section>
@@ -457,24 +479,24 @@ export default function App() {
       {/* Marquee Info line */}
       <div className="marquee">
         <div className="marquee-track">
-          <span className="marquee-item">Strength<span className="dot" /></span>
-          <span className="marquee-item outline">Discipline<span className="dot" /></span>
-          <span className="marquee-item">Power<span className="dot" /></span>
-          <span className="marquee-item outline">Endurance<span className="dot" /></span>
-          <span className="marquee-item">Excellence<span className="dot" /></span>
-          <span className="marquee-item outline">Legacy<span className="dot" /></span>
-          <span className="marquee-item">Strength<span className="dot" /></span>
-          <span className="marquee-item outline">Discipline<span className="dot" /></span>
-          <span className="marquee-item">Power<span className="dot" /></span>
-          <span className="marquee-item outline">Endurance<span className="dot" /></span>
-          <span className="marquee-item">Excellence<span className="dot" /></span>
-          <span className="marquee-item outline">Legacy<span className="dot" /></span>
+          <span className="marquee-item">{t('marquee.strength')}<span className="dot" /></span>
+          <span className="marquee-item outline">{t('marquee.discipline')}<span className="dot" /></span>
+          <span className="marquee-item">{t('marquee.power')}<span className="dot" /></span>
+          <span className="marquee-item outline">{t('marquee.endurance')}<span className="dot" /></span>
+          <span className="marquee-item">{t('marquee.excellence')}<span className="dot" /></span>
+          <span className="marquee-item outline">{t('marquee.legacy')}<span className="dot" /></span>
+          <span className="marquee-item">{t('marquee.strength')}<span className="dot" /></span>
+          <span className="marquee-item outline">{t('marquee.discipline')}<span className="dot" /></span>
+          <span className="marquee-item">{t('marquee.power')}<span className="dot" /></span>
+          <span className="marquee-item outline">{t('marquee.endurance')}<span className="dot" /></span>
+          <span className="marquee-item">{t('marquee.excellence')}<span className="dot" /></span>
+          <span className="marquee-item outline">{t('marquee.legacy')}<span className="dot" /></span>
         </div>
       </div>
 
       {/* About */}
       <section className="about" id="about">
-        <div className="about-deco">02</div>
+        <div className="about-deco">{t('about.deco')}</div>
         <div className="container">
           <div className="about-grid">
             <div className="about-visual reveal">
@@ -482,11 +504,18 @@ export default function App() {
               <div className="about-img-2" />
             </div>
             <div className="about-content">
-              <div className="number">02 — About Hero Gym</div>
+              <div className="number">{t('about.number')}</div>
               <h2 className="reveal">
-                Built for those<br />
-                who <span className="italic">refuse</span><br />
-                to settle.
+                {t('about.title1')}<br />
+                {locale === 'ar' ? (
+                  <>
+                    <span className="italic">{t('about.refuse')}</span> {t('about.title2')}
+                  </>
+                ) : (
+                  <>
+                    who <span className="italic">{t('about.refuse')}</span> to settle.
+                  </>
+                )}
               </h2>
               <p className="reveal reveal-delay-1" style={{ whiteSpace: 'pre-wrap' }}>
                 {settings?.landingPageContent?.about && typeof settings.landingPageContent.about === 'object' ? (
@@ -505,13 +534,17 @@ export default function App() {
                     }
                   </>
                 ) : (
-                  settings?.landingPageContent?.about || "Founded in 2014, HERO GYM was born from a simple obsession — that fitness should feel like craftsmanship, not consumption. Every detail, from the calibrations of our equipment to the credentials of our coaches, has been refined over a decade.\n\nWe don't sell memberships. We architect transformations. Our members don't just work out — they are mentored, measured, and pushed past what they thought possible."
+                  locale === 'ar' ? (
+                    "تأسس هيروجيم في عام ٢٠١٤ بناءً على شغف بسيط ومطلق — وهو أن اللياقة البدنية يجب أن تبدو كعمل فني متقن، وليست مجرد استهلاك يومي. كل تفصيل، بدءاً من معايرة أجهزتنا وحتى كفاءة وخبرة مدربينا، تم تحسينها وتطويرها على مدار عقد من الزمان.\n\nنحن لا نبيع عضويات، بل نصنع التحولات الجسدية والذهنية. أعضاؤنا لا يتمرنون فقط، بل نوجههم ونقيس تطورهم وندفعهم لتجاوز حدود قدراتهم."
+                  ) : (
+                    settings?.landingPageContent?.about || "Founded in 2014, HERO GYM was born from a simple obsession — that fitness should feel like craftsmanship, not consumption. Every detail, from the calibrations of our equipment to the credentials of our coaches, has been refined over a decade.\n\nWe don't sell memberships. We architect transformations. Our members don't just work out — they are mentored, measured, and pushed past what they thought possible."
+                  )
                 )}
               </p>
               <div className="signature reveal reveal-delay-3">
                 <div>
-                  <div className="sig-name">Daniel Cross</div>
-                  <div className="sig-role">Founder & Head Coach</div>
+                  <div className="sig-name">{t('about.signatureName')}</div>
+                  <div className="sig-role">{t('about.signatureRole')}</div>
                 </div>
               </div>
             </div>
@@ -524,37 +557,43 @@ export default function App() {
         <div className="container">
           <div className="section-head">
             <div className="left">
-              <div className="number reveal">03 — Why Hero</div>
-              <h2 className="reveal reveal-delay-1">An experience<br /><span className="italic">engineered</span> for results.</h2>
+              <div className="number reveal">{t('features.number')}</div>
+              <h2 className="reveal reveal-delay-1">
+                {locale === 'ar' ? (
+                  <>تجربة <span className="italic">مصممة</span> للنتائج.</>
+                ) : (
+                  <>An experience <span className="italic">engineered</span> for results.</>
+                )}
+              </h2>
             </div>
             <div className="right reveal reveal-delay-2">
-              <p>Four pillars that define the HERO standard. Every detail is calibrated for performance, recovery, and sustained transformation.</p>
+              <p>{t('features.sub')}</p>
             </div>
           </div>
           <div className="features-grid">
             <div className="feature-card reveal">
               <span className="num">01</span>
               <div className="icon">★</div>
-              <h3>Certified Trainers</h3>
-              <p>Every coach holds a minimum NASM-CPT certification with 5+ years of elite-level experience. Hand-picked, continuously evaluated.</p>
+              <h3>{t('features.card1.title')}</h3>
+              <p>{t('features.card1.desc')}</p>
             </div>
             <div className="feature-card reveal reveal-delay-1">
               <span className="num">02</span>
               <div className="icon">◈</div>
-              <h3>Premium Equipment</h3>
-              <p>Curated selection of Technogym, Eleiko, and Hammer Strength. Calibrated weekly. Replaced before wear ever shows.</p>
+              <h3>{t('features.card2.title')}</h3>
+              <p>{t('features.card2.desc')}</p>
             </div>
             <div className="feature-card reveal reveal-delay-2">
               <span className="num">03</span>
               <div className="icon">📈</div>
-              <h3>Personalized Programs</h3>
-              <p>No template programs. Your training is built around your body, your goals, your schedule — and adjusted every 4 weeks.</p>
+              <h3>{t('features.card3.title')}</h3>
+              <p>{t('features.card3.desc')}</p>
             </div>
             <div className="feature-card reveal reveal-delay-3">
               <span className="num">04</span>
               <div className="icon">🏢</div>
-              <h3>Modern Facilities</h3>
-              <p>Recovery suites, infrared sauna, cryotherapy, and private training studios. 24/7 access for members.</p>
+              <h3>{t('features.card4.title')}</h3>
+              <p>{t('features.card4.desc')}</p>
             </div>
           </div>
         </div>
@@ -565,11 +604,14 @@ export default function App() {
         <div className="container">
           <div className="section-head">
             <div className="left">
-              <div className="number reveal">04 — Real Transformations</div>
-              <h2 className="reveal reveal-delay-1">Before & after.<br /><span className="italic">No filters.</span></h2>
+              <div className="number reveal">{t('gallery.number')}</div>
+              <h2 className="reveal reveal-delay-1">
+                {t('gallery.title1')}<br />
+                <span className="italic">{t('gallery.title2')}</span>
+              </h2>
             </div>
             <div className="right reveal reveal-delay-2">
-              <p>Real members. Real timelines. Real results. Drag the divider on any card to witness each transformation unfold in real time.</p>
+              <p>{t('gallery.sub')}</p>
             </div>
           </div>
 
@@ -586,11 +628,14 @@ export default function App() {
         <div className="container">
           <div className="section-head">
             <div className="left">
-              <div className="number reveal">05 — Memberships</div>
-              <h2 className="reveal reveal-delay-1">Choose your<br /><span className="italic">commitment.</span></h2>
+              <div className="number reveal">{t('membership.number')}</div>
+              <h2 className="reveal reveal-delay-1">
+                {t('membership.title')}<br />
+                <span className="italic">{t('membership.italic')}</span>
+              </h2>
             </div>
             <div className="right reveal reveal-delay-2">
-              <p>Flexible structures. No hidden fees. Cancel anytime. Every membership includes an initial consultation and a customized 12-week blueprint.</p>
+              <p>{t('membership.sub')}</p>
             </div>
           </div>
 
@@ -600,44 +645,55 @@ export default function App() {
                 <div className="loading-spinner" />
               </div>
             ) : plans.length === 0 ? (
-              <p style={{ gridColumn: 'span 3', textAlign: 'center', color: 'var(--text-muted)' }}>No active subscription plans available at this time.</p>
+              <p style={{ gridColumn: 'span 3', textAlign: 'center', color: 'var(--text-muted)' }}>{t('membership.noPlans')}</p>
             ) : (
-              plans.map((plan, idx) => (
-                <div 
-                  key={plan.id} 
-                  className={`plan reveal ${idx === 1 ? 'featured' : ''}`}
-                  onMouseEnter={() => setCursorHover(true)} 
-                  onMouseLeave={() => setCursorHover(false)}
-                >
-                  <div className="plan-name">{plan.name}</div>
-                  <div className="plan-title">{plan.name} Package</div>
-                  <p className="plan-desc">{plan.description || 'Access to premium gym equipment, customizable training sessions, and elite wellness recovery suites.'}</p>
-                  
-                  <div className="price">
-                    <span className="currency">$</span>
-                    <span className="amount">{Number(plan.price).toFixed(0)}</span>
-                    <span className="period">/ {plan.durationValue} {plan.durationType}</span>
-                  </div>
-                  
-                  <ul className="plan-features">
-                    <li>✓ Complete club access — 24/7</li>
-                    <li>✓ Full locker & towel service</li>
-                    <li>✓ Complementary orientation PT assessment</li>
-                    {plan.freezeAllowed ? (
-                      <li>✓ Plan freeze allowed</li>
-                    ) : (
-                      <li className="disabled">✗ Plan freeze not allowed</li>
-                    )}
-                  </ul>
-                  
-                  <button 
-                    onClick={() => selectPlan(plan.id)}
-                    className={`btn ${idx === 1 ? 'btn-primary' : 'btn-ghost'}`}
+              plans.map((plan, idx) => {
+                // Localized duration type
+                const durationKey = plan.durationType?.toLowerCase();
+                const singleDurationType = durationKey ? (durationKey.endsWith('s') ? durationKey.slice(0, -1) : durationKey) : '';
+                const localizedDurationType = plan.durationValue === 1 
+                  ? t(`membership.durationType.${singleDurationType}`) 
+                  : t(`membership.durationType.${durationKey}`);
+
+                return (
+                  <div 
+                    key={plan.id} 
+                    className={`plan reveal ${idx === 1 ? 'featured' : ''}`}
+                    onMouseEnter={() => setCursorHover(true)} 
+                    onMouseLeave={() => setCursorHover(false)}
                   >
-                    Select Plan
-                  </button>
-                </div>
-              ))
+                    <div className="plan-name">{plan.name}</div>
+                    <div className="plan-title">{plan.name} {t('membership.package')}</div>
+                    <p className="plan-desc">{plan.description || t('membership.descPlaceholder')}</p>
+                    
+                    <div className="price">
+                      <span className="currency">$</span>
+                      <span className="amount">{Number(plan.price).toFixed(0)}</span>
+                      <span className="period">
+                        {t('membership.period', { value: plan.durationValue, type: localizedDurationType })}
+                      </span>
+                    </div>
+                    
+                    <ul className="plan-features">
+                      <li>✓ {t('membership.feature1')}</li>
+                      <li>✓ {t('membership.feature2')}</li>
+                      <li>✓ {t('membership.feature3')}</li>
+                      {plan.freezeAllowed ? (
+                        <li>✓ {t('membership.feature4Allowed')}</li>
+                      ) : (
+                        <li className="disabled">✗ {t('membership.feature4NotAllowed')}</li>
+                      )}
+                    </ul>
+                    
+                    <button 
+                      onClick={() => selectPlan(plan.id)}
+                      className={`btn ${idx === 1 ? 'btn-primary' : 'btn-ghost'}`}
+                    >
+                      {t('membership.selectPlan')}
+                    </button>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
@@ -648,18 +704,21 @@ export default function App() {
         <div className="container">
           <div className="section-head">
             <div className="left">
-              <div className="number reveal">06 — Registration</div>
-              <h2 className="reveal reveal-delay-1">Your transformation<br /><span className="italic">starts here.</span></h2>
+              <div className="number reveal">{t('contact.number')}</div>
+              <h2 className="reveal reveal-delay-1">
+                {t('contact.title')}<br />
+                <span className="italic">{t('contact.italic')}</span>
+              </h2>
             </div>
             <div className="right reveal reveal-delay-2">
-              <p>Book your visit and pick up your luxury club keycard. Experience premium fitness designed specifically for your goals.</p>
+              <p>{t('contact.sub')}</p>
             </div>
           </div>
 
           <div className="contact-grid">
             <form className="contact-form reveal" onSubmit={handleFormSubmit}>
-              <div className="form-title">Join The Club</div>
-              <p className="form-sub" style={{ marginBottom: '2rem' }}>Fill out the credentials below. Our guest concierge will reach out within 24 hours.</p>
+              <div className="form-title">{t('contact.formTitle')}</div>
+              <p className="form-sub" style={{ marginBottom: '2rem' }}>{t('contact.formSub')}</p>
 
               {formSuccess && (
                 <div style={{ 
@@ -672,7 +731,7 @@ export default function App() {
                   fontWeight: 600,
                   fontSize: '0.9rem' 
                 }}>
-                  Registration submitted successfully. Awaiting approval.
+                  {t('contact.successMsg')}
                 </div>
               )}
               {formError && (
@@ -691,10 +750,10 @@ export default function App() {
               )}
 
               <div className="form-group">
-                <label>Full Name</label>
+                <label>{t('contact.labelName')}</label>
                 <input 
                   type="text" 
-                  placeholder="John Doe" 
+                  placeholder={t('contact.placeholderName')} 
                   value={form.fullName}
                   onChange={e => handleInputChange('fullName', e.target.value)}
                   required 
@@ -703,20 +762,20 @@ export default function App() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Phone Number</label>
+                  <label>{t('contact.labelPhone')}</label>
                   <input 
                     type="tel" 
-                    placeholder="+1 555-0199" 
+                    placeholder={t('contact.placeholderPhone')} 
                     value={form.phone}
                     onChange={e => handleInputChange('phone', e.target.value)}
                     required 
                   />
                 </div>
                 <div className="form-group">
-                  <label>Age</label>
+                  <label>{t('contact.labelAge')}</label>
                   <input 
                     type="number" 
-                    placeholder="25" 
+                    placeholder={t('contact.placeholderAge')} 
                     value={form.age}
                     onChange={e => handleInputChange('age', e.target.value)}
                     required 
@@ -726,23 +785,23 @@ export default function App() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Gender</label>
+                  <label>{t('contact.labelGender')}</label>
                   <select 
                     value={form.gender}
                     onChange={e => handleInputChange('gender', e.target.value)}
                   >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
+                    <option value="male">{t('contact.genderMale')}</option>
+                    <option value="female">{t('contact.genderFemale')}</option>
+                    <option value="other">{t('contact.genderOther')}</option>
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Preferred Plan</label>
+                  <label>{t('contact.labelPlan')}</label>
                   <select 
                     value={form.preferredSubscriptionId}
                     onChange={e => handleInputChange('preferredSubscriptionId', e.target.value)}
                   >
-                    <option value="">Choose a membership...</option>
+                    <option value="">{t('contact.choosePlan')}</option>
                     {plans.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
@@ -752,19 +811,19 @@ export default function App() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Height (cm)</label>
+                  <label>{t('contact.labelHeight')}</label>
                   <input 
                     type="number" 
-                    placeholder="e.g. 175" 
+                    placeholder={t('contact.placeholderHeight')} 
                     value={form.heightCm}
                     onChange={e => handleInputChange('heightCm', e.target.value)}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Weight (kg)</label>
+                  <label>{t('contact.labelWeight')}</label>
                   <input 
                     type="number" 
-                    placeholder="e.g. 70" 
+                    placeholder={t('contact.placeholderWeight')} 
                     value={form.weightKg}
                     onChange={e => handleInputChange('weightKg', e.target.value)}
                   />
@@ -772,10 +831,10 @@ export default function App() {
               </div>
 
               <div className="form-group">
-                <label>Fitness Goal</label>
+                <label>{t('contact.labelGoal')}</label>
                 <input 
                   type="text" 
-                  placeholder="Muscle building, conditioning, general health..." 
+                  placeholder={t('contact.placeholderGoal')} 
                   value={form.fitnessGoal}
                   onChange={e => handleInputChange('fitnessGoal', e.target.value)}
                   required 
@@ -783,9 +842,9 @@ export default function App() {
               </div>
 
               <div className="form-group">
-                <label>Additional Notes</label>
+                <label>{t('contact.labelNotes')}</label>
                 <textarea 
-                  placeholder="Injuries, background experience, preferred scheduling..." 
+                  placeholder={t('contact.placeholderNotes')} 
                   value={form.notes}
                   onChange={e => handleInputChange('notes', e.target.value)}
                 />
@@ -798,8 +857,8 @@ export default function App() {
                 onMouseEnter={() => setCursorHover(true)} 
                 onMouseLeave={() => setCursorHover(false)}
               >
-                {formSubmitting ? 'Submitting Inquiry...' : 'Submit Application'}
-                <span className="arrow">→</span>
+                {formSubmitting ? t('contact.submitting') : t('contact.submitBtn')}
+                <span className="arrow">{locale === 'ar' ? '←' : '→'}</span>
               </button>
             </form>
 
@@ -807,29 +866,29 @@ export default function App() {
               <div className="info-card reveal" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>
                 <div className="icon">☎</div>
                 <div>
-                  <div className="label">Call Us</div>
+                  <div className="label">{t('contact.info.callUs')}</div>
                   <div className="value">{settings?.phoneNumbers?.[0] || '+1 (555) 842-HERO'}</div>
                 </div>
               </div>
               <div className="info-card reveal reveal-delay-1" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>
                 <div className="icon">📍</div>
                 <div>
-                  <div className="label">Visit Us</div>
+                  <div className="label">{t('contact.info.visitUs')}</div>
                   <div className="value">{settings?.address || '842 Athletic Ave, New York, NY 10013'}</div>
                 </div>
               </div>
               <div className="info-card reveal reveal-delay-2" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>
                 <div className="icon">✉</div>
                 <div>
-                  <div className="label">Email Us</div>
+                  <div className="label">{t('contact.info.emailUs')}</div>
                   <div className="value">{settings?.socialLinks?.email || 'hello@herogym.club'}</div>
                 </div>
               </div>
               <div className="info-card reveal reveal-delay-3" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>
                 <div className="icon">⏰</div>
                 <div>
-                  <div className="label">Working Hours</div>
-                  <div className="value">Mon–Sun · 24 hours / Members</div>
+                  <div className="label">{t('contact.info.workingHours')}</div>
+                  <div className="value">{t('contact.info.hoursVal')}</div>
                 </div>
               </div>
               <div className="map-card reveal reveal-delay-4">
@@ -846,14 +905,17 @@ export default function App() {
         <div className="cta-content">
           <div className="cta-eyebrow reveal">
             <span className="dot" />
-            <span>Limited Offer — Join This Month</span>
+            <span>{t('cta.eyebrow')}</span>
           </div>
           <h2 className="cta-title reveal reveal-delay-1">
-            Stop waiting.<br />
-            Start <span className="italic">forging.</span>
+            {locale === 'ar' ? (
+              <>توقف عن الانتظار.<br />ابدأ <span className="italic">البناء.</span></>
+            ) : (
+              <>Stop waiting.<br />Start <span className="italic">forging.</span></>
+            )}
           </h2>
           <p className="cta-sub reveal reveal-delay-2">
-            Your first session is complimentary. No contracts. No pressure. Just you, our coaches, and the first step toward the body you've earned.
+            {t('cta.sub')}
           </p>
           <div className="cta-actions reveal reveal-delay-3">
             <a 
@@ -862,8 +924,8 @@ export default function App() {
               onMouseEnter={() => setCursorHover(true)} 
               onMouseLeave={() => setCursorHover(false)}
             >
-              Claim Free Session
-              <span className="arrow">→</span>
+              {t('cta.btn')}
+              <span className="arrow">{locale === 'ar' ? '←' : '→'}</span>
             </a>
             <a 
               href="tel:+15558424376" 
@@ -871,7 +933,7 @@ export default function App() {
               onMouseEnter={() => setCursorHover(true)} 
               onMouseLeave={() => setCursorHover(false)}
             >
-              +1 (555) 842-HERO
+              {settings?.phoneNumbers?.[0] || '+1 (555) 842-HERO'}
             </a>
           </div>
         </div>
@@ -886,30 +948,30 @@ export default function App() {
                 <div className="logo-mark">H</div>
                 <span>HERO<span style={{ color: 'var(--gold)' }}>.</span>GYM</span>
               </a>
-              <p>Architecting transformations since 2014. A sanctuary for those who refuse ordinary — built for the relentless.</p>
+              <p>{t('footer.brandDesc')}</p>
             </div>
             <div className="footer-col">
-              <h4>Explore</h4>
+              <h4>{t('footer.explore')}</h4>
               <ul>
-                <li><a href="#home" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>Home</a></li>
-                <li><a href="#about" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>About Us</a></li>
-                <li><a href="#gallery" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>Gallery</a></li>
-                <li><a href="#membership" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>Memberships</a></li>
-                <li><a href="#contact" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>Contact</a></li>
+                <li><a href="#home" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{t('nav.home')}</a></li>
+                <li><a href="#about" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{t('nav.about')}</a></li>
+                <li><a href="#gallery" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{t('nav.gallery')}</a></li>
+                <li><a href="#membership" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{t('nav.memberships')}</a></li>
+                <li><a href="#contact" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{t('nav.register')}</a></li>
               </ul>
             </div>
             
             <div className="footer-col">
-              <h4>Contact Details</h4>
+              <h4>{t('footer.contact')}</h4>
               <ul>
-                <li><a href="tel:+15558424376" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>+1 (555) 842-HERO</a></li>
-                <li><a href="mailto:hello@herogym.club" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>hello@herogym.club</a></li>
-                <li><span style={{ color: 'var(--text-muted)' }}>842 Athletic Ave, NY</span></li>
+                <li><a href="tel:+15558424376" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{settings?.phoneNumbers?.[0] || '+1 (555) 842-HERO'}</a></li>
+                <li><a href="mailto:hello@herogym.club" onMouseEnter={() => setCursorHover(true)} onMouseLeave={() => setCursorHover(false)}>{settings?.socialLinks?.email || 'hello@herogym.club'}</a></li>
+                <li><span style={{ color: 'var(--text-muted)' }}>{settings?.address || '842 Athletic Ave, NY'}</span></li>
               </ul>
             </div>
           </div>
           <div className="footer-bottom">
-            <p>© {new Date().getFullYear()} HERO GYM. All rights reserved. Crafted for the relentless.</p>
+            <p>{t('footer.rights', { year: new Date().getFullYear() })}</p>
           </div>
         </div>
       </footer>
