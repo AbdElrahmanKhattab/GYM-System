@@ -12,59 +12,48 @@ const { USER_ROLE } = require('@gym-system/shared');
 router.use(authenticate, authorize(USER_ROLE.ADMIN));
 
 // GET /api/backups
-// Fetch list of all backups
+// Fetch list of all backups (returns empty since serverless environment stores backups locally)
 router.get('/', async (req, res) => {
-  try {
-    const backups = await prisma.backup.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-    
-    // Convert BigInt to string for JSON serialization
-    const serializedBackups = backups.map(b => ({
-      ...b,
-      sizeBytes: b.sizeBytes ? b.sizeBytes.toString() : null
-    }));
-
-    res.json(serializedBackups);
-  } catch (err) {
-    console.error('Failed to fetch backups:', err);
-    res.status(500).json({ error: 'Failed to fetch backups' });
-  }
+  res.json([]);
 });
 
 // POST /api/backups/manual
-// Trigger manual backup and stream down to browser
+// Trigger manual backup and stream down to browser in-memory
 router.post('/manual', async (req, res) => {
   try {
-    const backupRecord = await backupService.createBackup('manual');
-    
-    // Check if client wants a direct download
-    // E.g. via a query parameter ?download=true
-    if (req.query.download === 'true') {
-      const filePath = backupRecord.filePath;
-      const filename = path.basename(filePath);
-      
-      // Ensure file exists before downloading
-      if (fs.existsSync(filePath)) {
-        return res.download(filePath, filename, (err) => {
-          if (err) {
-            console.error('Error downloading backup file:', err);
-            // Headers might have been sent already
-            if (!res.headersSent) {
-              res.status(500).json({ error: 'Failed to download backup file' });
-            }
-          }
-        });
-      } else {
-        return res.status(404).json({ error: 'Backup file not found on server' });
+    // 1. Fetch all data directly
+    const data = {
+      users: await prisma.user.findMany(),
+      subscriptions: await prisma.subscription.findMany(),
+      settings: await prisma.setting.findMany(),
+      attendanceRules: await prisma.attendanceRule.findMany(),
+      members: await prisma.member.findMany(),
+      newCustomers: await prisma.newCustomer.findMany(),
+      memberSubscriptions: await prisma.memberSubscription.findMany(),
+      attendanceRecords: await prisma.attendanceRecord.findMany(),
+      freezes: await prisma.freeze.findMany(),
+      payments: await prisma.payment.findMany(),
+      expenses: await prisma.expense.findMany(),
+      activityLogs: await prisma.activityLog.findMany(),
+    };
+
+    // Custom JSON replacer to handle BigInt
+    const jsonReplacer = (key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
       }
-    }
+      return value;
+    };
+
+    const jsonString = JSON.stringify(data, jsonReplacer, 2);
     
-    // Normal JSON response
-    res.status(201).json({
-      ...backupRecord,
-      sizeBytes: backupRecord.sizeBytes ? backupRecord.sizeBytes.toString() : null
-    });
+    // Create a timestamped filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `backup-${timestamp}.json`;
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(jsonString);
   } catch (err) {
     console.error('Manual backup failed:', err);
     res.status(500).json({ error: err.message || 'Manual backup failed' });
@@ -72,19 +61,12 @@ router.post('/manual', async (req, res) => {
 });
 
 const multer = require('multer');
-const upload = multer({ dest: 'uploads/temp/' });
+const upload = multer({ dest: '/tmp/' });
 
 // POST /api/backups/:id/restore
-// Restore from a backup
+// Restore from a backup (Disabled or legacy, since Vercel is read-only)
 router.post('/:id/restore', async (req, res) => {
-  try {
-    const { id } = req.params;
-    await backupService.restoreBackup(id);
-    res.json({ message: 'Database successfully restored from backup.' });
-  } catch (err) {
-    console.error('Restore failed:', err);
-    res.status(500).json({ error: err.message || 'Restore failed' });
-  }
+  res.status(400).json({ error: 'Direct server restores are disabled in serverless mode. Please use Import Backup instead.' });
 });
 
 // POST /api/backups/import
