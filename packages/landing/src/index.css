@@ -509,7 +509,7 @@ section {
 
 .hero-title {
   font-size: clamp(48px, 8.5vw, 112px);
-  line-height: 1.4;
+  line-height: 1.1;
   margin-bottom: 36px;
 }
 
