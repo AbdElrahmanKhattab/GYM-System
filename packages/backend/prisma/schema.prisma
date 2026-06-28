@@ -1,0 +1,354 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ──────────────────────────────────────────────
+
+enum UserRole {
+  admin
+  receptionist
+}
+
+enum Gender {
+  male
+  female
+  other
+}
+
+enum NewCustomerStatus {
+  pending
+  approved
+  rejected
+}
+
+enum MemberStatus {
+  pending_approval
+  active
+  frozen
+  expired
+  completed
+  suspended
+  deleted
+}
+
+enum DurationType {
+  months
+  days
+  sessions
+}
+
+enum PaymentMethod {
+  cash
+  visa
+  instapay
+  vodafone_cash
+}
+
+enum BackupStatus {
+  success
+  failed
+}
+
+enum BackupTrigger {
+  scheduled
+  manual
+}
+
+enum AttendanceEntryMethod {
+  qr
+  manual_code
+  search_name
+  search_phone
+}
+
+enum ThemeSetting {
+  light
+  dark
+  system
+}
+
+// ─── TABLES ─────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  fullName     String    @map("full_name") @db.VarChar(150)
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  role         UserRole
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  reviewedCustomers  NewCustomer[]      @relation("ReviewedBy")
+  createdMembers     Member[]           @relation("CreatedBy")
+  recordedPayments   Payment[]          @relation("RecordedBy")
+  recordedAttendance AttendanceRecord[] @relation("RecordedBy")
+  appliedFreezes     Freeze[]           @relation("AppliedBy")
+  voidedAttendance   AttendanceRecord[] @relation("VoidedBy")
+  recordedExpenses   Expense[]          @relation("RecordedBy")
+  activityLogs       ActivityLog[]
+  updatedRules       AttendanceRule[]   @relation("UpdatedBy")
+
+  @@map("users")
+}
+
+model NewCustomer {
+  id                      String            @id @default(uuid()) @db.Uuid
+  fullName                String            @map("full_name") @db.VarChar(150)
+  phone                   String            @db.VarChar(20)
+  age                     Int               @db.SmallInt
+  gender                  Gender
+  heightCm                Decimal?          @map("height_cm") @db.Decimal(5, 2)
+  weightKg                Decimal?          @map("weight_kg") @db.Decimal(5, 2)
+  fitnessGoal             String            @map("fitness_goal") @db.Text
+  preferredSubscriptionId String?           @map("preferred_subscription_id") @db.Uuid
+  notes                   String?           @db.Text
+  status                  NewCustomerStatus @default(pending)
+  reviewedByUserId        String?           @map("reviewed_by_user_id") @db.Uuid
+  reviewedAt              DateTime?         @map("reviewed_at")
+  resultingMemberId       String?           @map("resulting_member_id") @db.Uuid
+  createdAt               DateTime          @default(now()) @map("created_at")
+  updatedAt               DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  preferredSubscription Subscription? @relation(fields: [preferredSubscriptionId], references: [id])
+  reviewedBy            User?         @relation("ReviewedBy", fields: [reviewedByUserId], references: [id])
+  resultingMember       Member?       @relation(fields: [resultingMemberId], references: [id])
+
+  @@index([status])
+  @@index([phone])
+  @@index([createdAt])
+  @@map("new_customers")
+}
+
+model Member {
+  id                   String       @id @default(uuid()) @db.Uuid
+  photoUrl             String?      @map("photo_url") @db.VarChar(500)
+  fullName             String       @map("full_name") @db.VarChar(150)
+  phone                String       @db.VarChar(20)
+  emergencyContact     String?      @map("emergency_contact") @db.VarChar(20)
+  gender               Gender
+  birthday             DateTime?    @db.Date
+  heightCm             Decimal?     @map("height_cm") @db.Decimal(5, 2)
+  weightKg             Decimal?     @map("weight_kg") @db.Decimal(5, 2)
+  fitnessGoal          String?      @map("fitness_goal") @db.Text
+  joinDate             DateTime     @default(now()) @map("join_date") @db.Date
+  notes                String?      @db.Text
+  status               MemberStatus @default(pending_approval)
+  qrToken              String       @unique @map("qr_token") @db.VarChar(64)
+  manualCode           String       @unique @map("manual_code") @db.VarChar(10)
+  qrTokenRegeneratedAt DateTime?    @map("qr_token_regenerated_at")
+  createdByUserId      String?      @map("created_by_user_id") @db.Uuid
+  deletedAt            DateTime?    @map("deleted_at")
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  createdBy           User?                @relation("CreatedBy", fields: [createdByUserId], references: [id])
+  newCustomerRecords  NewCustomer[]
+  memberSubscriptions MemberSubscription[]
+  attendanceRecords   AttendanceRecord[]
+  payments            Payment[]
+  freezes             Freeze[]
+
+  @@index([phone])
+  @@index([fullName])
+  @@index([status])
+  @@map("members")
+}
+
+model Subscription {
+  id            String       @id @default(uuid()) @db.Uuid
+  name          String       @db.VarChar(100)
+  description   String?      @db.Text
+  price         Decimal      @db.Decimal(10, 2)
+  durationType                DurationType @map("duration_type")
+  durationValue               Int          @map("duration_value")
+  freezeAllowed               Boolean      @default(false) @map("freeze_allowed")
+  allowMultipleCheckinsPerDay Boolean      @default(false) @map("allow_multiple_checkins_per_day")
+  isActive                    Boolean      @default(true) @map("is_active")
+  displayOrder  Int          @default(0) @map("display_order") @db.SmallInt
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  newCustomers        NewCustomer[]
+  memberSubscriptions MemberSubscription[]
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@map("subscriptions")
+}
+
+model MemberSubscription {
+  id                String    @id @default(uuid()) @db.Uuid
+  memberId          String    @map("member_id") @db.Uuid
+  subscriptionId    String    @map("subscription_id") @db.Uuid
+  startDate         DateTime  @map("start_date") @db.Date
+  endDate           DateTime? @map("end_date") @db.Date
+  remainingSessions Int?      @map("remaining_sessions")
+  totalFrozenDays   Int       @default(0) @map("total_frozen_days")
+  isCurrent         Boolean   @default(true) @map("is_current")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  member            Member             @relation(fields: [memberId], references: [id])
+  subscription      Subscription       @relation(fields: [subscriptionId], references: [id])
+  attendanceRecords AttendanceRecord[]
+  payments          Payment[]
+  freezes           Freeze[]
+
+  @@index([memberId])
+  @@index([isCurrent])
+  @@map("member_subscriptions")
+}
+
+model AttendanceRecord {
+  id                     String                @id @default(uuid()) @db.Uuid
+  memberId               String                @map("member_id") @db.Uuid
+  memberSubscriptionId   String                @map("member_subscription_id") @db.Uuid
+  checkedInAt            DateTime              @default(now()) @map("checked_in_at")
+  entryMethod            AttendanceEntryMethod  @map("entry_method")
+  recordedByUserId       String?               @map("recorded_by_user_id") @db.Uuid
+  sessionsRemainingAfter Int?                  @map("sessions_remaining_after")
+  isVoided               Boolean               @default(false) @map("is_voided")
+  voidedReason           String?               @map("voided_reason") @db.Text
+  voidedByUserId         String?               @map("voided_by_user_id") @db.Uuid
+  createdAt              DateTime              @default(now()) @map("created_at")
+
+  // Relations
+  member             Member             @relation(fields: [memberId], references: [id])
+  memberSubscription MemberSubscription @relation(fields: [memberSubscriptionId], references: [id])
+  recordedBy         User?              @relation("RecordedBy", fields: [recordedByUserId], references: [id])
+  voidedBy           User?              @relation("VoidedBy", fields: [voidedByUserId], references: [id])
+
+  @@index([memberId])
+  @@index([checkedInAt])
+  @@index([memberId, checkedInAt])
+  @@map("attendance_records")
+}
+
+model Freeze {
+  id                   String             @id @default(uuid()) @db.Uuid
+  memberId             String             @map("member_id") @db.Uuid
+  memberSubscriptionId String             @map("member_subscription_id") @db.Uuid
+  startDate            DateTime           @map("start_date") @db.Date
+  endDate              DateTime?          @map("end_date") @db.Date
+  daysCount            Int?               @map("days_count")
+  appliedByUserId      String             @map("applied_by_user_id") @db.Uuid
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  member             Member             @relation(fields: [memberId], references: [id])
+  memberSubscription MemberSubscription @relation(fields: [memberSubscriptionId], references: [id])
+  appliedBy          User               @relation("AppliedBy", fields: [appliedByUserId], references: [id])
+
+  @@index([memberId])
+  @@index([memberSubscriptionId])
+  @@map("freezes")
+}
+
+model Payment {
+  id                   String        @id @default(uuid()) @db.Uuid
+  memberId             String        @map("member_id") @db.Uuid
+  memberSubscriptionId String?       @map("member_subscription_id") @db.Uuid
+  amount               Decimal       @db.Decimal(10, 2)
+  paymentMethod        PaymentMethod @map("payment_method")
+  paidAt               DateTime      @map("paid_at")
+  recordedByUserId     String        @map("recorded_by_user_id") @db.Uuid
+  notes                String?       @db.Text
+  createdAt            DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  member             Member              @relation(fields: [memberId], references: [id])
+  memberSubscription MemberSubscription? @relation(fields: [memberSubscriptionId], references: [id])
+  recordedBy         User                @relation("RecordedBy", fields: [recordedByUserId], references: [id])
+
+  @@index([memberId])
+  @@index([paidAt])
+  @@map("payments")
+}
+
+model Expense {
+  id               String   @id @default(uuid()) @db.Uuid
+  amount           Decimal  @db.Decimal(10, 2)
+  category         String   @db.VarChar(100)
+  description      String?  @db.Text
+  spentAt          DateTime @map("spent_at") @db.Date
+  recordedByUserId String   @map("recorded_by_user_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // Relations
+  recordedBy User @relation("RecordedBy", fields: [recordedByUserId], references: [id])
+
+  @@index([spentAt])
+  @@map("expenses")
+}
+
+model AttendanceRule {
+  id                          String   @id @default(uuid()) @db.Uuid
+  blockExpiredMemberships     Boolean  @default(true) @map("block_expired_memberships")
+  blockZeroRemainingSessions  Boolean  @default(true) @map("block_zero_remaining_sessions")
+  warnOnUnpaidBalance         Boolean  @default(true) @map("warn_on_unpaid_balance")
+  autoCompleteOnZeroSessions  Boolean  @default(true) @map("auto_complete_on_zero_sessions")
+  expiringSoonWindowDays      Int      @default(7) @map("expiring_soon_window_days") @db.SmallInt
+  updatedAt                   DateTime @updatedAt @map("updated_at")
+  updatedByUserId             String?  @map("updated_by_user_id") @db.Uuid
+
+  // Relations
+  updatedBy User? @relation("UpdatedBy", fields: [updatedByUserId], references: [id])
+
+  @@map("attendance_rules")
+}
+
+model Setting {
+  id                 String       @id @default(uuid()) @db.Uuid
+  gymName            String       @default("My Gym") @map("gym_name") @db.VarChar(150)
+  logoUrl            String?      @map("logo_url") @db.VarChar(500)
+  address            String?      @db.VarChar(255)
+  phoneNumbers       Json         @default("[]") @map("phone_numbers")
+  socialLinks        Json         @default("{}") @map("social_links")
+  landingPageContent Json         @default("{}") @map("landing_page_content")
+  theme              ThemeSetting @default(system)
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String?  @map("entity_type") @db.VarChar(50)
+  entityId   String?  @map("entity_id") @db.Uuid
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("activity_log")
+}
+
+model Backup {
+  id          String        @id @default(uuid()) @db.Uuid
+  filePath    String        @map("file_path") @db.VarChar(500)
+  sizeBytes   BigInt?       @map("size_bytes")
+  status      BackupStatus
+  triggeredBy BackupTrigger @map("triggered_by")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@map("backups")
+}
