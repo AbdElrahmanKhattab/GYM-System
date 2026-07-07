@@ -10,6 +10,7 @@ export default function CustomerReviewModal({ customer, onClose }) {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pin, setPin] = useState('');
 
   if (!customer) return null;
 
@@ -38,7 +39,7 @@ export default function CustomerReviewModal({ customer, onClose }) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus, ...(pin ? { pin } : {}) }),
       });
 
       const data = await res.json();
@@ -76,6 +77,21 @@ export default function CustomerReviewModal({ customer, onClose }) {
                 <span className="data-label">Phone</span>
                 <span className="data-value">{customer.phone}</span>
               </div>
+              {isPending && (
+                <div className="data-row">
+                  <span className="data-label">Check-in PIN</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    placeholder="4-6 digits (optional)"
+                    className="pin-input"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  />
+                </div>
+              )}
               <div className="data-row">
                 <span className="data-label">Age</span>
                 <span className="data-value">{customer.age} years</span>

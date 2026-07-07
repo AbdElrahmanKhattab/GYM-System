@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { QRCodeSVG } from 'qrcode.react';
 import './SettingsPage.css';
 
 export default function SettingsPage() {
@@ -26,10 +27,68 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [checkinConfig, setCheckinConfig] = useState(null);
+  const [checkinLoading, setCheckinLoading] = useState(false);
 
   useEffect(() => {
     fetchSettings();
+    fetchCheckinConfig();
   }, []);
+
+  const fetchCheckinConfig = async () => {
+    try {
+      setCheckinLoading(true);
+      const res = await fetch('/api/settings/checkin-config', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCheckinConfig(data.config);
+      }
+    } catch (err) {
+      console.error('Failed to load checkin config', err);
+    } finally {
+      setCheckinLoading(false);
+    }
+  };
+
+  const handleToggleCheckin = async (enabled) => {
+    try {
+      const res = await fetch('/api/settings/checkin-config', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ isSelfCheckinEnabled: enabled })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCheckinConfig(data.config);
+        setMessage({ type: 'success', text: enabled ? 'Self check-in enabled' : 'Self check-in disabled' });
+        setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to update check-in config' });
+    }
+  };
+
+  const handleRegenerateQr = async () => {
+    try {
+      const res = await fetch('/api/settings/checkin-config/regenerate-qr', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCheckinConfig(data.config);
+        setMessage({ type: 'success', text: 'QR code regenerated' });
+        setTimeout(() => setMessage({ type: '', text: '' }), 5000);
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to regenerate QR' });
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -252,6 +311,83 @@ export default function SettingsPage() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="settings-section">
+          <h2>Self Check-in</h2>
+          {checkinLoading ? (
+            <p className="text-muted">{t('common.loading')}</p>
+          ) : (
+            <div className="settings-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Enable Self Check-in</label>
+                  <label className="toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={checkinConfig?.isSelfCheckinEnabled || false}
+                      onChange={(e) => handleToggleCheckin(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-text">{checkinConfig?.isSelfCheckinEnabled ? 'Enabled' : 'Disabled'}</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Check-in URL</label>
+                <div className="copy-url-row">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`${window.location.origin.replace(/:\d+$/, '')}:5174/checkin`}
+                    className="input"
+                    onClick={(e) => e.target.select()}
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin.replace(/:\d+$/, '')}:5174/checkin`);
+                      setMessage({ type: 'success', text: 'URL copied!' });
+                      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+                    }}
+                  >
+                    Copy
+                  </button>
+                </div>
+                <span className="text-muted" style={{ fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
+                  Members visit this URL to check in using their phone and PIN.
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label>Check-in QR Code</label>
+                <div className="qr-preview-box">
+                  <QRCodeSVG
+                    value={`${window.location.origin.replace(/:\d+$/, '')}:5174/checkin`}
+                    size={160}
+                    bgColor="#ffffff"
+                    fgColor="#0f172a"
+                    level="H"
+                    includeMargin={true}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ marginTop: '0.75rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                  onClick={handleRegenerateQr}
+                >
+                  Regenerate QR
+                </button>
+                <span className="text-muted" style={{ fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
+                  Display this QR at the gym entrance for quick access.
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="settings-actions">

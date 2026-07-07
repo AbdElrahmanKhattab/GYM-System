@@ -64,6 +64,7 @@ enum AttendanceEntryMethod {
   manual_code
   search_name
   search_phone
+  self_checkin
 }
 
 enum ThemeSetting {
@@ -86,15 +87,16 @@ model User {
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  reviewedCustomers  NewCustomer[]      @relation("ReviewedBy")
-  createdMembers     Member[]           @relation("CreatedBy")
-  recordedPayments   Payment[]          @relation("RecordedBy")
-  recordedAttendance AttendanceRecord[] @relation("RecordedBy")
-  appliedFreezes     Freeze[]           @relation("AppliedBy")
-  voidedAttendance   AttendanceRecord[] @relation("VoidedBy")
-  recordedExpenses   Expense[]          @relation("RecordedBy")
-  activityLogs       ActivityLog[]
-  updatedRules       AttendanceRule[]   @relation("UpdatedBy")
+  reviewedCustomers     NewCustomer[]      @relation("ReviewedBy")
+  createdMembers        Member[]           @relation("CreatedBy")
+  recordedPayments      Payment[]          @relation("RecordedBy")
+  recordedAttendance    AttendanceRecord[] @relation("RecordedBy")
+  appliedFreezes        Freeze[]           @relation("AppliedBy")
+  voidedAttendance      AttendanceRecord[] @relation("VoidedBy")
+  recordedExpenses      Expense[]          @relation("RecordedBy")
+  activityLogs          ActivityLog[]
+  updatedRules          AttendanceRule[]   @relation("UpdatedBy")
+  updatedCheckinConfigs GymCheckinConfig[] @relation("CheckinConfigUpdatedBy")
 
   @@map("users")
 }
@@ -145,6 +147,8 @@ model Member {
   qrToken              String       @unique @map("qr_token") @db.VarChar(64)
   manualCode           String       @unique @map("manual_code") @db.VarChar(10)
   qrTokenRegeneratedAt DateTime?    @map("qr_token_regenerated_at")
+  pinHash              String?      @map("pin_hash") @db.VarChar(255)
+  pinSetAt             DateTime?    @map("pin_set_at")
   createdByUserId      String?      @map("created_by_user_id") @db.Uuid
   deletedAt            DateTime?    @map("deleted_at")
   createdAt            DateTime     @default(now()) @map("created_at")
@@ -157,6 +161,7 @@ model Member {
   attendanceRecords   AttendanceRecord[]
   payments            Payment[]
   freezes             Freeze[]
+  memberSessions      MemberSession[]
 
   @@index([phone])
   @@index([fullName])
@@ -165,18 +170,18 @@ model Member {
 }
 
 model Subscription {
-  id            String       @id @default(uuid()) @db.Uuid
-  name          String       @db.VarChar(100)
-  description   String?      @db.Text
-  price         Decimal      @db.Decimal(10, 2)
+  id                          String       @id @default(uuid()) @db.Uuid
+  name                        String       @db.VarChar(100)
+  description                 String?      @db.Text
+  price                       Decimal      @db.Decimal(10, 2)
   durationType                DurationType @map("duration_type")
   durationValue               Int          @map("duration_value")
   freezeAllowed               Boolean      @default(false) @map("freeze_allowed")
   allowMultipleCheckinsPerDay Boolean      @default(false) @map("allow_multiple_checkins_per_day")
   isActive                    Boolean      @default(true) @map("is_active")
-  displayOrder  Int          @default(0) @map("display_order") @db.SmallInt
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
+  displayOrder                Int          @default(0) @map("display_order") @db.SmallInt
+  createdAt                   DateTime     @default(now()) @map("created_at")
+  updatedAt                   DateTime     @updatedAt @map("updated_at")
 
   // Relations
   newCustomers        NewCustomer[]
@@ -216,7 +221,7 @@ model AttendanceRecord {
   memberId               String                @map("member_id") @db.Uuid
   memberSubscriptionId   String                @map("member_subscription_id") @db.Uuid
   checkedInAt            DateTime              @default(now()) @map("checked_in_at")
-  entryMethod            AttendanceEntryMethod  @map("entry_method")
+  entryMethod            AttendanceEntryMethod @map("entry_method")
   recordedByUserId       String?               @map("recorded_by_user_id") @db.Uuid
   sessionsRemainingAfter Int?                  @map("sessions_remaining_after")
   isVoided               Boolean               @default(false) @map("is_voided")
@@ -237,15 +242,15 @@ model AttendanceRecord {
 }
 
 model Freeze {
-  id                   String             @id @default(uuid()) @db.Uuid
-  memberId             String             @map("member_id") @db.Uuid
-  memberSubscriptionId String             @map("member_subscription_id") @db.Uuid
-  startDate            DateTime           @map("start_date") @db.Date
-  endDate              DateTime?          @map("end_date") @db.Date
-  daysCount            Int?               @map("days_count")
-  appliedByUserId      String             @map("applied_by_user_id") @db.Uuid
-  createdAt            DateTime           @default(now()) @map("created_at")
-  updatedAt            DateTime           @updatedAt @map("updated_at")
+  id                   String    @id @default(uuid()) @db.Uuid
+  memberId             String    @map("member_id") @db.Uuid
+  memberSubscriptionId String    @map("member_subscription_id") @db.Uuid
+  startDate            DateTime  @map("start_date") @db.Date
+  endDate              DateTime? @map("end_date") @db.Date
+  daysCount            Int?      @map("days_count")
+  appliedByUserId      String    @map("applied_by_user_id") @db.Uuid
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
 
   // Relations
   member             Member             @relation(fields: [memberId], references: [id])
@@ -295,14 +300,14 @@ model Expense {
 }
 
 model AttendanceRule {
-  id                          String   @id @default(uuid()) @db.Uuid
-  blockExpiredMemberships     Boolean  @default(true) @map("block_expired_memberships")
-  blockZeroRemainingSessions  Boolean  @default(true) @map("block_zero_remaining_sessions")
-  warnOnUnpaidBalance         Boolean  @default(true) @map("warn_on_unpaid_balance")
-  autoCompleteOnZeroSessions  Boolean  @default(true) @map("auto_complete_on_zero_sessions")
-  expiringSoonWindowDays      Int      @default(7) @map("expiring_soon_window_days") @db.SmallInt
-  updatedAt                   DateTime @updatedAt @map("updated_at")
-  updatedByUserId             String?  @map("updated_by_user_id") @db.Uuid
+  id                         String   @id @default(uuid()) @db.Uuid
+  blockExpiredMemberships    Boolean  @default(true) @map("block_expired_memberships")
+  blockZeroRemainingSessions Boolean  @default(true) @map("block_zero_remaining_sessions")
+  warnOnUnpaidBalance        Boolean  @default(true) @map("warn_on_unpaid_balance")
+  autoCompleteOnZeroSessions Boolean  @default(true) @map("auto_complete_on_zero_sessions")
+  expiringSoonWindowDays     Int      @default(7) @map("expiring_soon_window_days") @db.SmallInt
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+  updatedByUserId            String?  @map("updated_by_user_id") @db.Uuid
 
   // Relations
   updatedBy User? @relation("UpdatedBy", fields: [updatedByUserId], references: [id])
@@ -322,6 +327,35 @@ model Setting {
   updatedAt          DateTime     @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+model GymCheckinConfig {
+  id                   String    @id @default(uuid()) @db.Uuid
+  checkinUrl           String    @map("checkin_url") @db.VarChar(500)
+  qrGeneratedAt        DateTime? @map("qr_generated_at")
+  isSelfCheckinEnabled Boolean   @default(true) @map("is_self_checkin_enabled")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  updatedByUserId      String?   @map("updated_by_user_id") @db.Uuid
+
+  updatedBy User? @relation("CheckinConfigUpdatedBy", fields: [updatedByUserId], references: [id])
+
+  @@map("gym_checkin_config")
+}
+
+model MemberSession {
+  id           String    @id @default(uuid()) @db.Uuid
+  memberId     String    @map("member_id") @db.Uuid
+  sessionToken String    @unique @map("session_token") @db.VarChar(64)
+  deviceLabel  String?   @map("device_label") @db.VarChar(100)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  lastUsedAt   DateTime  @default(now()) @map("last_used_at")
+  expiresAt    DateTime? @map("expires_at")
+  revokedAt    DateTime? @map("revoked_at")
+
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@index([memberId])
+  @@map("member_sessions")
 }
 
 model ActivityLog {

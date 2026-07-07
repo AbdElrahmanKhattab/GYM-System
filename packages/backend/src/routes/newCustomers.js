@@ -1,10 +1,11 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const prisma = require('../lib/prisma');
 const { authenticate, authorize } = require('../middleware/auth');
 const { logActivity } = require('../lib/activityLog');
 const { generateQrToken, generateManualCode } = require('../lib/codeGenerators');
 const { createSubscriptionTerm } = require('../lib/subscriptionHelper');
-const { MEMBER_STATUS } = require('@gym-system/shared');
+const { MEMBER_STATUS, PIN_MIN_LENGTH, PIN_MAX_LENGTH } = require('@gym-system/shared');
 
 const router = express.Router();
 
@@ -88,6 +89,23 @@ router.patch('/:id/status', authorize('admin'), async (req, res, next) => {
         });
       }
 
+      // Validate optional PIN
+      let pinHash = null;
+      if (req.body.pin) {
+        const cleanedPin = req.body.pin.replace(/\s/g, '');
+        if (!/^\d+$/.test(cleanedPin)) {
+          return res.status(400).json({
+            error: { message: 'PIN must contain only digits.', code: 'VALIDATION_ERROR' },
+          });
+        }
+        if (cleanedPin.length < PIN_MIN_LENGTH || cleanedPin.length > PIN_MAX_LENGTH) {
+          return res.status(400).json({
+            error: { message: `PIN must be between ${PIN_MIN_LENGTH} and ${PIN_MAX_LENGTH} digits.`, code: 'VALIDATION_ERROR' },
+          });
+        }
+        pinHash = await bcrypt.hash(cleanedPin, 10);
+      }
+
       // Generate secure codes
       const qrToken = await generateQrToken();
       const manualCode = await generateManualCode();
@@ -104,6 +122,8 @@ router.patch('/:id/status', authorize('admin'), async (req, res, next) => {
           notes: customer.notes,
           qrToken,
           manualCode,
+          pinHash,
+          pinSetAt: pinHash ? new Date() : null,
           status: MEMBER_STATUS.ACTIVE,
           createdByUserId: req.user.id,
         },

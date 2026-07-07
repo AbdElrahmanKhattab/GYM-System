@@ -30,6 +30,9 @@ export default function MemberDetailPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ amount: '', paymentMethod: 'cash', notes: '' });
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinSubmitting, setPinSubmitting] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
 
@@ -216,6 +219,37 @@ export default function MemberDetailPage() {
       showToast(err.message, 'error');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleSetPin = async () => {
+    const pin = pinInput.trim();
+    if (pin && (pin.length < 4 || pin.length > 6 || !/^\d+$/.test(pin))) {
+      showToast('PIN must be 4-6 digits', 'error');
+      return;
+    }
+    setPinSubmitting(true);
+    try {
+      const res = await fetch(`/api/members/${id}/set-pin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ pin: pin || null }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error?.message || 'Failed to set PIN');
+      }
+      setShowPinModal(false);
+      setPinInput('');
+      await fetchMember();
+      showToast(pin ? 'PIN set successfully' : 'PIN removed', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setPinSubmitting(false);
     }
   };
 
@@ -501,6 +535,33 @@ export default function MemberDetailPage() {
             </div>
           </div>
 
+          {/* PIN Management block */}
+          <div className="detail-card mb-4" style={{ borderLeft: '4px solid var(--gold-primary)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0 }}>Check-in PIN</h3>
+              {isAdmin && (
+                <button
+                  className="btn-secondary"
+                  style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}
+                  onClick={() => { setPinInput(''); setShowPinModal(true); }}
+                >
+                  {member.pinSetAt ? 'Reset PIN' : 'Set PIN'}
+                </button>
+              )}
+            </div>
+            <div className="mt-3">
+              <span className="text-muted">Status: </span>
+              <span style={{ fontWeight: 600, color: member.pinSetAt ? 'var(--success-color)' : 'var(--text-muted)' }}>
+                {member.pinSetAt ? 'Active' : 'Not Set'}
+              </span>
+              {member.pinSetAt && (
+                <span className="text-muted" style={{ marginLeft: '1rem', fontSize: '0.85rem' }}>
+                  Set: {formatDate(member.pinSetAt)}
+                </span>
+              )}
+            </div>
+          </div>
+
           {/* Attendance History block */}
           <div className="detail-card mb-4">
             <h3>{t('members.attendanceHistory')}</h3>
@@ -590,6 +651,39 @@ export default function MemberDetailPage() {
           onClose={() => setShowCard(false)}
         />
       )}
+      {/* PIN Modal */}
+      {showPinModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '400px' }}>
+            <h2>{member.pinSetAt ? 'Reset Check-in PIN' : 'Set Check-in PIN'}</h2>
+            <p className="text-muted" style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
+              Enter a 4-6 digit PIN the member will use for self check-in.
+            </p>
+            <div className="form-group">
+              <label>PIN (leave empty to remove)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                className="input"
+                placeholder="4-6 digits"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              />
+            </div>
+            <div className="modal-actions mt-4">
+              <button className="btn-secondary" onClick={() => setShowPinModal(false)} disabled={pinSubmitting}>
+                Cancel
+              </button>
+              <button className="btn-primary" onClick={handleSetPin} disabled={pinSubmitting}>
+                {pinSubmitting ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Payment Modal */}
       {showPaymentModal && (
         <div className="modal-overlay">

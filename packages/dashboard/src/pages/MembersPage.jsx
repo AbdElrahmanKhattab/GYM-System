@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useModal } from '../contexts/ModalContext';
 import './MembersPage.css';
 
 const STATUS_COLORS = {
@@ -17,13 +18,19 @@ const STATUS_COLORS = {
 export default function MembersPage() {
   const { token, isAdmin } = useAuth();
   const { t } = useLanguage();
+  const { showToast, showConfirm } = useModal();
   const navigate = useNavigate();
   const [members, setMembers] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
+  const [pinFilter, setPinFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showBulkPinModal, setShowBulkPinModal] = useState(false);
+  const [bulkPinValue, setBulkPinValue] = useState('');
+  const [bulkPinSubmitting, setBulkPinSubmitting] = useState(false);
 
   const STATUS_OPTIONS = [
     { value: '', label: t('members.allMembers') },
@@ -60,6 +67,7 @@ export default function MembersPage() {
       setLoading(true);
       const params = new URLSearchParams();
       if (statusFilter) params.set('status', statusFilter);
+      if (pinFilter) params.set('hasPin', pinFilter);
 
       const res = await fetch(`/api/members?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -73,7 +81,7 @@ export default function MembersPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, statusFilter]);
+  }, [token, statusFilter, pinFilter]);
 
   useEffect(() => {
     fetchMembers();
@@ -111,6 +119,66 @@ export default function MembersPage() {
   const formatDate = (d) => {
     if (!d) return '—';
     return new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === displayMembers.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(displayMembers.map((m) => m.id)));
+    }
+  };
+
+  const handleBulkSetPin = async () => {
+    const pin = bulkPinValue.trim();
+    if (pin && (pin.length < 4 || pin.length > 6 || !/^\d+$/.test(pin))) {
+      showToast('PIN must be 4-6 digits', 'error');
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    const confirmed = await showConfirm({
+      title: 'Set PIN for selected members',
+      message: `Set PIN for ${ids.length} member(s)?`,
+      variant: 'primary',
+      confirmText: 'Yes',
+      cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
+
+    setBulkPinSubmitting(true);
+    try {
+      const res = await fetch('/api/members/bulk-set-pin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ memberIds: ids, pin: pin || null }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error?.message || 'Failed');
+      }
+      setShowBulkPinModal(false);
+      setBulkPinValue('');
+      setSelectedIds(new Set());
+      await fetchMembers();
+      showToast(pin ? 'PIN set successfully' : 'PIN removed', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setBulkPinSubmitting(false);
+    }
   };
 
   return (
@@ -151,11 +219,22 @@ export default function MembersPage() {
         <select
           className="status-filter"
           value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setSearchQuery(''); setSearchResults(null); }}
+          onChange={(e) => { setStatusFilter(e.target.value); setSearchQuery(''); setSearchResults(null); setSelectedIds(new Set()); }}
         >
           {STATUS_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
+        </select>
+
+        <select
+          className="status-filter"
+          value={pinFilter}
+          onChange={(e) => { setPinFilter(e.target.value); setSelectedIds(new Set()); }}
+          style={{ minWidth: '130px' }}
+        >
+          <option value="">All PINs</option>
+          <option value="true">Has PIN</option>
+          <option value="false">No PIN</option>
         </select>
       </div>
 
@@ -164,10 +243,20 @@ export default function MembersPage() {
         <table className="data-table">
           <thead>
             <tr>
+              {isAdmin && (
+                <th style={{ width: '36px' }}>
+                  <input
+                    type="checkbox"
+                    checked={displayMembers.length > 0 && selectedIds.size === displayMembers.length}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
+              )}
               <th>{t('members.fullName')}</th>
               <th>{t('common.phone')}</th>
               <th>{t('common.code')}</th>
               <th>{t('members.subscription')}</th>
+              <th>PIN</th>
               <th>{t('members.status')}</th>
               <th>{t('members.joinDate')}</th>
               <th></th>
@@ -176,17 +265,26 @@ export default function MembersPage() {
           <tbody>
             {loading && displayMembers.length === 0 ? (
               <tr>
-                <td colSpan="7" className="text-center empty-state">{t('common.loading')}</td>
+                <td colSpan={isAdmin ? 10 : 9} className="text-center empty-state">{t('common.loading')}</td>
               </tr>
             ) : displayMembers.length === 0 ? (
               <tr>
-                <td colSpan="7" className="text-center empty-state">
+                <td colSpan={isAdmin ? 10 : 9} className="text-center empty-state">
                   {searchQuery ? t('members.noMatch') : t('members.noMembers')}
                 </td>
               </tr>
             ) : (
               displayMembers.map((m) => (
                 <tr key={m.id} className="clickable-row" onClick={() => navigate(`/members/${m.id}`)}>
+                  {isAdmin && (
+                    <td style={{ width: '36px' }} onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(m.id)}
+                        onChange={() => toggleSelect(m.id)}
+                      />
+                    </td>
+                  )}
                   <td>
                     <div className="member-cell">
                       <div className="member-avatar">
@@ -201,6 +299,11 @@ export default function MembersPage() {
                   <td>{m.phone}</td>
                   <td><code className="manual-code">{m.manualCode}</code></td>
                   <td>{getCurrentPlan(m)}</td>
+                  <td>
+                    <span className={`badge ${m.pinSetAt ? 'badge-success' : 'badge-neutral'}`}>
+                      {m.pinSetAt ? 'PIN' : '—'}
+                    </span>
+                  </td>
                   <td>
                     <span className={`badge ${STATUS_COLORS[m.status] || 'badge-neutral'}`}>
                       {getStatusLabel(m.status)}
@@ -218,6 +321,52 @@ export default function MembersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Bulk action bar */}
+      {isAdmin && selectedIds.size > 0 && (
+        <div className="bulk-action-bar">
+          <span className="bulk-count">{selectedIds.size} selected</span>
+          <button className="btn-secondary" style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }} onClick={() => { setBulkPinValue(''); setShowBulkPinModal(true); }}>
+            Set PIN
+          </button>
+          <button className="btn-secondary" style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }} onClick={() => setSelectedIds(new Set())}>
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* Bulk PIN Modal */}
+      {showBulkPinModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '400px' }}>
+            <h2>Set PIN for {selectedIds.size} member(s)</h2>
+            <p className="text-muted" style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
+              Enter a 4-6 digit PIN. Leave empty to remove PIN from selected members.
+            </p>
+            <div className="form-group">
+              <label>PIN (optional)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                className="input"
+                placeholder="4-6 digits"
+                value={bulkPinValue}
+                onChange={(e) => setBulkPinValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              />
+            </div>
+            <div className="modal-actions mt-4">
+              <button className="btn-secondary" onClick={() => setShowBulkPinModal(false)} disabled={bulkPinSubmitting}>
+                Cancel
+              </button>
+              <button className="btn-primary" onClick={handleBulkSetPin} disabled={bulkPinSubmitting}>
+                {bulkPinSubmitting ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

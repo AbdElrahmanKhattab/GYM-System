@@ -1,10 +1,11 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const prisma = require('../lib/prisma');
 const { authenticate, authorize } = require('../middleware/auth');
 const { logActivity } = require('../lib/activityLog');
 const { generateQrToken, generateManualCode } = require('../lib/codeGenerators');
 const { createSubscriptionTerm } = require('../lib/subscriptionHelper');
-const { MEMBER_STATUS } = require('@gym-system/shared');
+const { MEMBER_STATUS, PIN_MIN_LENGTH, PIN_MAX_LENGTH } = require('@gym-system/shared');
 
 const router = express.Router();
 
@@ -71,7 +72,7 @@ router.get('/search', async (req, res, next) => {
  */
 router.get('/', async (req, res, next) => {
   try {
-    const { status, includeDeleted, page = 1, limit = 50 } = req.query;
+    const { status, includeDeleted, hasPin, page = 1, limit = 50 } = req.query;
 
     const where = {};
 
@@ -81,6 +82,12 @@ router.get('/', async (req, res, next) => {
 
     if (status && Object.values(MEMBER_STATUS).includes(status)) {
       where.status = status;
+    }
+
+    if (hasPin === 'true') {
+      where.pinHash = { not: null };
+    } else if (hasPin === 'false') {
+      where.pinHash = null;
     }
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -653,5 +660,139 @@ router.post('/:id/unfreeze', authorize('admin'), async (req, res, next) => {
     next(error);
   }
 });
+
+/**
+ * POST /api/members/:id/set-pin
+ * Admin sets or resets a member's PIN.
+ */
+router.post('/:id/set-pin', authorize('admin'), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { pin } = req.body;
+
+    if (!pin || typeof pin !== 'string') {
+      return res.status(400).json({
+        error: { message: 'PIN is required.', code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    const cleanedPin = pin.replace(/\s/g, '');
+    if (!/^\d+$/.test(cleanedPin)) {
+      return res.status(400).json({
+        error: { message: 'PIN must contain only digits.', code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    if (cleanedPin.length < PIN_MIN_LENGTH || cleanedPin.length > PIN_MAX_LENGTH) {
+      return res.status(400).json({
+        error: { message: `PIN must be between ${PIN_MIN_LENGTH} and ${PIN_MAX_LENGTH} digits.`, code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    const member = await prisma.member.findUnique({ where: { id } });
+    if (!member) {
+      return res.status(404).json({
+        error: { message: 'Member not found.', code: 'NOT_FOUND' },
+      });
+    }
+
+    const pinHash = await bcrypt.hash(cleanedPin, 10);
+    const hadPinBefore = !!member.pinHash;
+
+    const updatedMember = await prisma.member.update({
+      where: { id },
+      data: {
+        pinHash,
+        pinSetAt: new Date(),
+      },
+      select: {
+        id: true,
+        fullName: true,
+        pinSetAt: true,
+      },
+    });
+
+    await logActivity({
+      userId: req.user.id,
+      action: hadPinBefore ? 'member_pin_reset' : 'member_pin_set',
+      entityType: 'member',
+      entityId: id,
+      metadata: { fullName: member.fullName },
+    });
+
+    res.json({
+      message: hadPinBefore ? 'PIN reset successfully.' : 'PIN set successfully.',
+      member: updatedMember,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/members/bulk-set-pin
+ * Admin sets the same PIN for multiple existing members at once.
+ * Body: { memberIds: string[], pin: string }
+ */
+router.post('/bulk-set-pin', authorize('admin'), async (req, res, next) => {
+  try {
+    const { memberIds, pin } = req.body;
+
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+      return res.status(400).json({
+        error: { message: 'memberIds array is required and must not be empty.', code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    if (!pin || typeof pin !== 'string') {
+      return res.status(400).json({
+        error: { message: 'PIN is required.', code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    const cleanedPin = pin.replace(/\s/g, '');
+    if (!/^\d+$/.test(cleanedPin)) {
+      return res.status(400).json({
+        error: { message: 'PIN must contain only digits.', code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    if (cleanedPin.length < PIN_MIN_LENGTH || cleanedPin.length > PIN_MAX_LENGTH) {
+      return res.status(400).json({
+        error: { message: `PIN must be between ${PIN_MIN_LENGTH} and ${PIN_MAX_LENGTH} digits.`, code: 'VALIDATION_ERROR' },
+      });
+    }
+
+    const pinHash = await bcrypt.hash(cleanedPin, 10);
+
+    const result = await prisma.member.updateMany({
+      where: {
+        id: { in: memberIds },
+        deletedAt: null,
+      },
+      data: {
+        pinHash,
+        pinSetAt: new Date(),
+      },
+    });
+
+    await logActivity({
+      userId: req.user.id,
+      action: 'member_pin_bulk_set',
+      entityType: 'member',
+      metadata: { count: result.count },
+    });
+
+    res.json({
+      message: `PIN set for ${result.count} member(s).`,
+      updatedCount: result.count,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// This must be defined after /search and /bulk-set-pin to avoid route conflicts
+// since they are specific paths, not generic :id params.
 
 module.exports = router;

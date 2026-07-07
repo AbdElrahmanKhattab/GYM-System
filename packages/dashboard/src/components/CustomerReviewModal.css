@@ -78,3 +78,21 @@
   background: var(--danger);
   color: white;
 }
+
+.pin-input {
+  width: 140px;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  text-align: center;
+  letter-spacing: 0.15em;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.pin-input:focus {
+  border-color: var(--gold-primary);
+}

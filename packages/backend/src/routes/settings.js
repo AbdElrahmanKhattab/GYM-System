@@ -92,4 +92,102 @@ router.patch('/', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/settings/checkin-config
+ * Retrieve the self check-in configuration (singleton).
+ */
+router.get('/checkin-config', async (req, res, next) => {
+  try {
+    let config = await prisma.gymCheckinConfig.findFirst();
+
+    if (!config) {
+      config = await prisma.gymCheckinConfig.create({
+        data: {
+          checkinUrl: `${req.protocol}://${req.get('host')}/checkin`,
+        },
+      });
+    }
+
+    res.json({ config });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PATCH /api/settings/checkin-config
+ * Update the self check-in configuration (admin only).
+ */
+router.patch('/checkin-config', async (req, res, next) => {
+  try {
+    const { checkinUrl, isSelfCheckinEnabled } = req.body;
+
+    let config = await prisma.gymCheckinConfig.findFirst();
+    if (!config) {
+      config = await prisma.gymCheckinConfig.create({
+        data: {
+          checkinUrl: checkinUrl || `${req.protocol}://${req.get('host')}/checkin`,
+          isSelfCheckinEnabled: isSelfCheckinEnabled !== undefined ? isSelfCheckinEnabled : true,
+        },
+      });
+    }
+
+    const updateData = {};
+    if (checkinUrl !== undefined) updateData.checkinUrl = checkinUrl;
+    if (isSelfCheckinEnabled !== undefined) updateData.isSelfCheckinEnabled = isSelfCheckinEnabled;
+    updateData.updatedByUserId = req.user.id;
+
+    const updatedConfig = await prisma.gymCheckinConfig.update({
+      where: { id: config.id },
+      data: updateData,
+    });
+
+    await logActivity({
+      userId: req.user.id,
+      action: 'checkin_config_updated',
+      entityType: 'gym_checkin_config',
+      metadata: { updatedFields: Object.keys(req.body) },
+    });
+
+    res.json({ config: updatedConfig });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/settings/checkin-config/regenerate-qr
+ * Marks the QR as regenerated (updates timestamp). Admin only.
+ */
+router.post('/checkin-config/regenerate-qr', async (req, res, next) => {
+  try {
+    let config = await prisma.gymCheckinConfig.findFirst();
+    if (!config) {
+      config = await prisma.gymCheckinConfig.create({
+        data: {
+          checkinUrl: `${req.protocol}://${req.get('host')}/checkin`,
+        },
+      });
+    }
+
+    const updatedConfig = await prisma.gymCheckinConfig.update({
+      where: { id: config.id },
+      data: {
+        qrGeneratedAt: new Date(),
+        updatedByUserId: req.user.id,
+      },
+    });
+
+    await logActivity({
+      userId: req.user.id,
+      action: 'checkin_qr_regenerated',
+      entityType: 'gym_checkin_config',
+    });
+
+    res.json({ config: updatedConfig });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
