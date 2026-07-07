@@ -49,7 +49,17 @@ const ENTRY_METHOD = Object.freeze({
   MANUAL_CODE: 'manual_code',
   SEARCH_NAME: 'search_name',
   SEARCH_PHONE: 'search_phone',
+  SELF_CHECKIN: 'self_checkin',
 });
+
+const PIN_MIN_LENGTH = 4;
+const PIN_MAX_LENGTH = 6;
+
+const SESSION_TOKEN_LENGTH = 32; // bytes -> 64 hex chars
+const SESSION_EXPIRY_DAYS = 90;
+
+const PIN_LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const PIN_LOGIN_RATE_LIMIT_MAX = 5;
 
 const BACKUP_STATUS = Object.freeze({
   SUCCESS: 'success',
@@ -85,4 +95,10 @@ module.exports = {
   THEME,
   MANUAL_CODE_CHARSET,
   MANUAL_CODE_LENGTH,
+  PIN_MIN_LENGTH,
+  PIN_MAX_LENGTH,
+  SESSION_TOKEN_LENGTH,
+  SESSION_EXPIRY_DAYS,
+  PIN_LOGIN_RATE_LIMIT_WINDOW_MS,
+  PIN_LOGIN_RATE_LIMIT_MAX,
 };
